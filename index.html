@@ -7,7 +7,7 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#22c55e">
     
-        <meta property="og:title" content="Rapporto Servizio">
+    <meta property="og:title" content="Rapporto Servizio">
     <meta property="og:description" content="Gestione ore e abbuoni multi-profilo">
     <meta property="og:image" content="https://asarritzu-boop.github.io/Rapporto_di_Servizio/rapporti.png">
     <meta property="og:url" content="https://asarritzu-boop.github.io/Rapporto_di_Servizio/">
@@ -80,7 +80,6 @@
         select, input { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1rem; outline: none; transition: border-color 0.3s; box-sizing: border-box; }
         select:focus, input:focus { border-color: var(--success); }
 
-        /* Correzione spaziatura campi input */
         .grid-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 5px; }
 
         .btn-riepilogo { padding: 6px 14px; border-radius: 8px; font-size: 0.7rem; font-weight: 800; cursor: pointer; border: none; text-transform: uppercase; background: #eee; }
@@ -188,13 +187,16 @@
 
     function init() {
         if (profili.length === 0) {
-            let nome = prompt("Benvenuto! Inserisci il nome del primo profilo:");
-            if (!nome) nome = "Utente 1";
-            creaProfilo(nome);
+            let nome = "";
+            while (!nome || nome.trim() === "") {
+                nome = prompt("Benvenuto! Per iniziare, inserisci il tuo nome (o il nome del primo profilo):");
+                if (nome === null) nome = ""; // Gestione tasto Annulla
+            }
+            creaProfilo(nome.trim());
         }
         popolaSelectUtenti();
         document.getElementById('mese').value = new Date().getMonth() + 1;
-        calcola();
+        cambiaUtente(); // Inizializza il colore e il calcolo basato sul primo utente
     }
 
     function chiudiModal() { document.getElementById('modalApp').style.display = 'none'; }
@@ -253,9 +255,11 @@
     function cambiaUtente() {
         const idUtente = document.getElementById('utente').value;
         const p = profili.find(x => x.id == idUtente);
-        document.body.style.backgroundColor = p.colore + "15";
-        document.getElementById('btnRiepilogo').style.backgroundColor = p.colore;
-        document.getElementById('btnRiepilogo').style.color = "white";
+        if(p) {
+            document.body.style.backgroundColor = p.colore + "15";
+            document.getElementById('btnRiepilogo').style.backgroundColor = p.colore;
+            document.getElementById('btnRiepilogo').style.color = "white";
+        }
         calcola();
     }
 
@@ -344,16 +348,17 @@
     function eliminaSingolo(i) { if(confirm("Eliminare voce?")) { db.splice(i, 1); salvaTutto(); } }
     function aggiungiNuovoProfilo() {
         let nome = prompt("Inserisci il nome della persona:");
-        if (nome) { creaProfilo(nome); popolaSelectUtenti(); calcola(); }
+        if (nome && nome.trim() !== "") { creaProfilo(nome.trim()); popolaSelectUtenti(); calcola(); }
     }
     function eliminaProfiloCorrente() {
         const uId = document.getElementById('utente').value;
-        const nome = profili.find(x => x.id == uId).nome;
-        if (confirm(`Eliminare il profilo ${nome} e tutti i suoi dati?`)) {
+        const profilo = profili.find(x => x.id == uId);
+        if (!profilo) return;
+        if (confirm(`Eliminare il profilo ${profilo.nome} e tutti i suoi dati?`)) {
             db = db.filter(v => v.utenteId != uId);
             profili = profili.filter(p => p.id != uId);
             localStorage.setItem('profili_v8', JSON.stringify(profili));
-            salvaTutto(); if (profili.length === 0) init(); else { popolaSelectUtenti(); calcola(); }
+            salvaTutto(); if (profili.length === 0) init(); else { popolaSelectUtenti(); cambiaUtente(); }
         }
     }
 
@@ -361,6 +366,7 @@
         const mesiServizio = [9, 10, 11, 12, 1, 2, 3, 4, 5, 6, 7, 8];
         const uId = document.getElementById('utente').value;
         const p = profili.find(x => x.id == uId);
+        if(!p) return;
         document.getElementById('titoloRiepilogo').innerText = "Riepilogo: " + p.nome;
         let html = `<table class="table-riepilogo"><tr><th>Mese</th><th>Eff.</th><th>Abb.</th><th>Tot.</th></tr>`;
         mesiServizio.forEach(m => {
@@ -383,9 +389,9 @@
         const reader = new FileReader();
         reader.onload = (ev) => {
             const data = JSON.parse(ev.target.result);
-            profili = data.profili; db = data.db;
+            profili = data.profili || []; db = data.db || [];
             localStorage.setItem('profili_v8', JSON.stringify(profili));
-            salvaTutto(); popolaSelectUtenti();
+            salvaTutto(); popolaSelectUtenti(); cambiaUtente();
         };
         reader.readAsText(e.target.files[0]);
     }
