@@ -6,6 +6,12 @@
     <title>Rapporto Servizio Multi-Profilo</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#22c55e">
+    
+    <meta property="og:title" content="Rapporto Servizio">
+    <meta property="og:description" content="Gestione ore e abbuoni multi-profilo">
+    <meta property="og:image" content="icon.png">
+    <link rel="apple-touch-icon" href="icon.png">
+
     <style>
         :root { 
             --bg: #f1f5f9; 
@@ -38,7 +44,6 @@
 
         h2 { margin: 0; color: var(--text-main); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; }
         
-        /* Dashboard Profili */
         .scroll-container { 
             display: flex; overflow-x: auto; gap: 12px; padding-bottom: 10px;
             scrollbar-width: none;
@@ -67,10 +72,12 @@
         .positivo { background: #dcfce7; color: #166534; }
         .negativo { background: #fee2e2; color: #991b1b; }
         
-        /* Form e UI */
         label { display: block; margin: 12px 0 4px; font-weight: 700; font-size: 0.8rem; color: #475569; }
-        select, input { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1rem; outline: none; transition: border-color 0.3s; }
+        select, input { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1rem; outline: none; transition: border-color 0.3s; box-sizing: border-box; }
         select:focus, input:focus { border-color: var(--success); }
+
+        /* Correzione spaziatura campi input */
+        .grid-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 5px; }
 
         .btn-riepilogo { padding: 6px 14px; border-radius: 8px; font-size: 0.7rem; font-weight: 800; cursor: pointer; border: none; text-transform: uppercase; background: #eee; }
 
@@ -83,12 +90,15 @@
         .btn-action { width: 100%; background: white; border: 1px solid #cbd5e1; padding: 12px; border-radius: 10px; font-size: 0.8rem; margin-top: 8px; cursor: pointer; font-weight: 600; }
         .btn-danger { color: #dc2626; border-color: #fecaca; background: #fff1f2; }
 
-        /* Modal */
         .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
-        .modal-content { background: white; margin: 15% auto; padding: 20px; border-radius: 20px; width: 85%; max-width: 400px; max-height: 80vh; overflow-y: auto; }
+        .modal-content { background: white; margin: 10% auto; padding: 20px; border-radius: 20px; width: 85%; max-width: 400px; max-height: 85vh; overflow-y: auto; }
         
         .table-riepilogo { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
         .table-riepilogo td, .table-riepilogo th { padding: 8px; border-bottom: 1px solid #eee; text-align: left; }
+        
+        .guida-text { font-size: 0.9rem; line-height: 1.5; color: #334155; text-align: left; }
+        .img-istruzioni { width: 100%; border-radius: 10px; margin-top: 10px; border: 1px solid #ddd; }
+        .flex-buttons { display: flex; gap: 10px; margin-top: 15px; }
     </style>
 </head>
 <body>
@@ -100,8 +110,7 @@
             <button id="btnRiepilogo" class="btn-riepilogo" onclick="apriRiepilogo()">Riepilogo</button>
         </div>
         
-        <div class="scroll-container" id="dashboardProfili">
-            </div>
+        <div class="scroll-container" id="dashboardProfili"></div>
     </div>
 
     <div class="card">
@@ -119,7 +128,7 @@
             <option value="7">Luglio</option><option value="8">Agosto</option>
         </select>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div class="grid-inputs">
             <div><label>Ore Effettive</label><input type="number" id="ore" placeholder="0" inputmode="numeric"></div>
             <div><label>Abbuoni</label><input type="number" id="abbuoni" placeholder="0" inputmode="numeric"></div>
         </div>
@@ -134,14 +143,28 @@
     </div>
 
     <div class="card">
-        <h2>Impostazioni Profili</h2>
+        <h2>IMPOSTAZIONI</h2>
         <button class="btn-action" onclick="aggiungiNuovoProfilo()">➕ Aggiungi Nuovo Profilo</button>
         <button class="btn-action" onclick="eliminaProfiloCorrente()" id="btnEliminaProfilo" style="color: #dc2626;">🗑️ Elimina Profilo Attivo</button>
+        <hr style="margin: 15px 0; opacity: 0.2;">
+        
+        <button class="btn-action" onclick="apriGuida()">📖 GUIDA</button>
+        <button class="btn-action" onclick="apriPopupInstallazione()">📲 COME INSTALLARE APP</button>
+        <button class="btn-action" onclick="condividiApp()">🔗 CONDIVIDI APP</button>
+        
         <hr style="margin: 15px 0; opacity: 0.2;">
         <button class="btn-action" onclick="esportaDati()">💾 Esporta Backup</button>
         <button class="btn-action" onclick="document.getElementById('importFile').click()">📂 Importa Backup</button>
         <button class="btn-action btn-danger" onclick="resetAnno()">🔥 RESET TOTALE</button>
         <input type="file" id="importFile" style="display:none" onchange="importaDati(event)">
+    </div>
+</div>
+
+<div id="modalApp" class="modal" onclick="chiudiModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <h2 id="modalTitle" style="font-size: 1rem; margin-bottom: 15px;"></h2>
+        <div id="modalBody"></div>
+        <button class="btn-action" onclick="chiudiModal()" style="margin-top:20px">Chiudi</button>
     </div>
 </div>
 
@@ -170,13 +193,50 @@
         calcola();
     }
 
+    function chiudiModal() { document.getElementById('modalApp').style.display = 'none'; }
+
+    function apriGuida() {
+        document.getElementById('modalTitle').innerText = "Guida al Conteggio";
+        document.getElementById('modalBody').innerHTML = `
+            <div class="guida-text">
+                <p><b>Ore Effettive:</b> Inserisci le ore svolte nel ministero di campo.</p>
+                <p><b>Abbuoni:</b> Inserisci le ore dedicate ad attività teocratiche extra.</p>
+                <p><b>Logica:</b> Il sistema somma le ore dedicate al ministero e gli abbuoni necessari per raggiungere la quota mensile di 55 ore. Gli abbuoni in eccesso non vengono conteggiati nel totale mensile ma restano nello storico.</p>
+            </div>`;
+        document.getElementById('modalApp').style.display = 'block';
+    }
+
+    function apriPopupInstallazione() {
+        document.getElementById('modalTitle').innerText = "Scegli il tuo dispositivo";
+        document.getElementById('modalBody').innerHTML = `
+            <div class="flex-buttons">
+                <button class="btn-action" onclick="mostraIstruzioni('android')">ANDROID</button>
+                <button class="btn-action" onclick="mostraIstruzioni('iphone')">IPHONE</button>
+            </div>
+            <div id="areaIstruzioni"></div>`;
+        document.getElementById('modalApp').style.display = 'block';
+    }
+
+    function mostraIstruzioni(tipo) {
+        const img = tipo === 'android' ? 'xandroid.png' : 'xiphone.png';
+        document.getElementById('areaIstruzioni').innerHTML = `<img src="${img}" class="img-istruzioni" alt="Istruzioni ${tipo}">`;
+    }
+
+    function condividiApp() {
+        if (navigator.share) {
+            navigator.share({
+                title: 'Rapporto Servizio',
+                text: 'Gestisci il tuo rapporto di servizio con questa app!',
+                url: window.location.href
+            }).catch(console.error);
+        } else {
+            alert("Copia questo link e invialo: " + window.location.href);
+        }
+    }
+
     function creaProfilo(nome) {
         const colori = ['#0ea5e9', '#a855f7', '#ec4899', '#f59e0b', '#10b981', '#6366f1'];
-        const nuovo = {
-            id: Date.now(),
-            nome: nome,
-            colore: colori[profili.length % colori.length]
-        };
+        const nuovo = { id: Date.now(), nome: nome, colore: colori[profili.length % colori.length] };
         profili.push(nuovo);
         localStorage.setItem('profili_v8', JSON.stringify(profili));
     }
@@ -189,7 +249,7 @@
     function cambiaUtente() {
         const idUtente = document.getElementById('utente').value;
         const p = profili.find(x => x.id == idUtente);
-        document.body.style.backgroundColor = p.colore + "15"; // Trasparenza
+        document.body.style.backgroundColor = p.colore + "15";
         document.getElementById('btnRiepilogo').style.backgroundColor = p.colore;
         document.getElementById('btnRiepilogo').style.color = "white";
         calcola();
@@ -200,35 +260,25 @@
         const meseSelezionato = document.getElementById('mese').value;
         const meseOggi = new Date().getMonth() + 1;
         let mesiTrascorsi = mesiServizio.indexOf(meseOggi) + 1 || 12;
-        
         const dashboard = document.getElementById('dashboardProfili');
         dashboard.innerHTML = "";
-
         profili.forEach(p => {
             let totaleAnnuale = 0;
-            let effMeseSel = 0;
-            let abbMeseSel = 0;
-            let totMeseSel = 0;
-
+            let effMeseSel = 0; let abbMeseSel = 0; let totMeseSel = 0;
             mesiServizio.forEach(m => {
                 let oreEff = db.filter(v => v.utenteId == p.id && v.mese == m).reduce((s,v) => s + v.ore, 0);
                 let abbDisp = db.filter(v => v.utenteId == p.id && v.mese == m).reduce((s,v) => s + v.abbuoni, 0);
                 let abbUsati = (oreEff < 55) ? Math.min(abbDisp, 55 - oreEff) : 0;
                 let totM = oreEff + abbUsati;
                 totaleAnnuale += totM;
-
-                if (m == meseSelezionato) {
-                    effMeseSel = oreEff; abbMeseSel = abbUsati; totMeseSel = totM;
-                }
+                if (m == meseSelezionato) { effMeseSel = oreEff; abbMeseSel = abbUsati; totMeseSel = totM; }
             });
-
             const g600 = totaleAnnuale - 600;
             const gMed = totaleAnnuale - (mesiTrascorsi * 50);
-
             dashboard.innerHTML += `
                 <div class="stat-card" style="background: ${p.colore}20; border-color: ${p.colore}">
                     <span style="font-weight:900; color:${p.colore}">${p.nome.toUpperCase()}</span>
-                    <div class="val-annuale" style="color: var(--text-main)">${totaleAnnuale}h</div>
+                    <div class="val-annuale">${totaleAnnuale}h</div>
                     <div class="box-mese">
                         <span class="mese-label">${nomiMesi[meseSelezionato].toUpperCase()}</span>
                         <div class="mese-totale">${totMeseSel}h</div>
@@ -239,8 +289,7 @@
                     </div>
                     <div class="badge-gap ${g600 >= 0 ? 'positivo' : 'negativo'}">GAP 600: ${g600 > 0 ? '+' : ''}${g600}</div>
                     <div class="badge-gap ${gMed >= 0 ? 'positivo' : 'negativo'}">Media: ${gMed > 0 ? '+' : ''}${gMed}</div>
-                </div>
-            `;
+                </div>`;
         });
         aggiornaLista();
     }
@@ -250,7 +299,6 @@
         const uId = document.getElementById('utente').value;
         const lista = document.getElementById('listaStorico');
         const dati = db.map((v, i) => ({...v, idx: i})).filter(v => v.mese == m && v.utenteId == uId);
-        
         lista.innerHTML = dati.length ? dati.reverse().map(v => `
             <div class="history-item">
                 <span><b>${v.ore}h</b> <small>(+${v.abbuoni} abb.)</small><br><small>${v.timestamp}</small></span>
@@ -267,12 +315,9 @@
         const o = parseFloat(document.getElementById('ore').value || 0);
         const a = parseFloat(document.getElementById('abbuoni').value || 0);
         const ts = new Date().toLocaleString('it-IT', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
-
         if (editIndex > -1) db[editIndex] = { utenteId: uId, mese: m, ore: o, abbuoni: a, timestamp: ts + " (mod.)" };
         else db.push({ utenteId: uId, mese: m, ore: o, abbuoni: a, timestamp: ts });
-        
-        salvaTutto();
-        resetForm();
+        salvaTutto(); resetForm();
     }
 
     function preparaModifica(i) {
@@ -284,35 +329,7 @@
         document.getElementById('btnAnnullaModifica').style.display = "block";
     }
 
-    function eliminaSingolo(i) { if(confirm("Eliminare voce?")) { db.splice(i, 1); salvaTutto(); } }
-
-    function aggiungiNuovoProfilo() {
-        let nome = prompt("Inserisci il nome della persona:");
-        if (nome) {
-            creaProfilo(nome);
-            popolaSelectUtenti();
-            calcola();
-        }
-    }
-
-    function eliminaProfiloCorrente() {
-        const uId = document.getElementById('utente').value;
-        const nome = profili.find(x => x.id == uId).nome;
-        if (confirm(`Eliminare il profilo ${nome} e tutti i suoi dati?`)) {
-            db = db.filter(v => v.utenteId != uId);
-            profili = profili.filter(p => p.id != uId);
-            localStorage.setItem('profili_v8', JSON.stringify(profili));
-            salvaTutto();
-            if (profili.length === 0) init();
-            else { popolaSelectUtenti(); calcola(); }
-        }
-    }
-
-    function salvaTutto() {
-        localStorage.setItem('rapporto_v8', JSON.stringify(db));
-        calcola();
-    }
-
+    function salvaTutto() { localStorage.setItem('rapporto_v8', JSON.stringify(db)); calcola(); }
     function resetForm() {
         editIndex = -1; document.getElementById('ore').value = ""; document.getElementById('abbuoni').value = "";
         document.getElementById('formTitle').innerText = "Nuovo Inserimento";
@@ -320,23 +337,34 @@
         document.getElementById('btnAnnullaModifica').style.display = "none";
     }
 
+    function eliminaSingolo(i) { if(confirm("Eliminare voce?")) { db.splice(i, 1); salvaTutto(); } }
+    function aggiungiNuovoProfilo() {
+        let nome = prompt("Inserisci il nome della persona:");
+        if (nome) { creaProfilo(nome); popolaSelectUtenti(); calcola(); }
+    }
+    function eliminaProfiloCorrente() {
+        const uId = document.getElementById('utente').value;
+        const nome = profili.find(x => x.id == uId).nome;
+        if (confirm(`Eliminare il profilo ${nome} e tutti i suoi dati?`)) {
+            db = db.filter(v => v.utenteId != uId);
+            profili = profili.filter(p => p.id != uId);
+            localStorage.setItem('profili_v8', JSON.stringify(profili));
+            salvaTutto(); if (profili.length === 0) init(); else { popolaSelectUtenti(); calcola(); }
+        }
+    }
+
     function apriRiepilogo() {
         const mesiServizio = [9, 10, 11, 12, 1, 2, 3, 4, 5, 6, 7, 8];
         const uId = document.getElementById('utente').value;
         const p = profili.find(x => x.id == uId);
-        
         document.getElementById('titoloRiepilogo').innerText = "Riepilogo: " + p.nome;
         let html = `<table class="table-riepilogo"><tr><th>Mese</th><th>Eff.</th><th>Abb.</th><th>Tot.</th></tr>`;
-        
         mesiServizio.forEach(m => {
             let oreEff = db.filter(v => v.utenteId == uId && v.mese == m).reduce((s,v) => s + v.ore, 0);
             let abbDisp = db.filter(v => v.utenteId == uId && v.mese == m).reduce((s,v) => s + v.abbuoni, 0);
             let abbUsati = (oreEff < 55) ? Math.min(abbDisp, 55 - oreEff) : 0;
-            if (oreEff + abbUsati > 0) {
-                html += `<tr><td>${nomiMesi[m]}</td><td>${oreEff}h</td><td>${abbUsati}h</td><td><b>${oreEff+abbUsati}h</b></td></tr>`;
-            }
+            if (oreEff + abbUsati > 0) html += `<tr><td>${nomiMesi[m]}</td><td>${oreEff}h</td><td>${abbUsati}h</td><td><b>${oreEff+abbUsati}h</b></td></tr>`;
         });
-        
         document.getElementById('corpoRiepilogo').innerHTML = html + `</table>`;
         document.getElementById('modalRiepilogo').style.display = 'block';
     }
@@ -358,11 +386,7 @@
         reader.readAsText(e.target.files[0]);
     }
 
-    function resetAnno() {
-        if (confirm("Attenzione! Questo cancellerà TUTTI i profili e TUTTI i dati. Procedere?")) {
-            localStorage.clear(); location.reload();
-        }
-    }
+    function resetAnno() { if (confirm("Attenzione! Questo cancellerà TUTTI i dati. Procedere?")) { localStorage.clear(); location.reload(); } }
 
     window.onload = init;
 </script>
