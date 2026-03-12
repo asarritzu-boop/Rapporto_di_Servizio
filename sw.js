@@ -1,9 +1,11 @@
-const CACHE_NAME = 'rapporto-servizio-v3';
+const CACHE_NAME = 'rapporto-servizio-v4';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
-  './rapporti.png'
+  './rapporti.png',
+  './xandroid.png',
+  './xiphone.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -23,7 +25,16 @@ self.addEventListener('activate', (event) => {
 });
 
 // Strategia: Cache first, fallback su rete
+// Le richieste Firebase vanno sempre sulla rete
 self.addEventListener('fetch', (event) => {
+  const url = event.request.url;
+
+  // Firebase: sempre rete, mai cache
+  if (url.includes('firebaseapp.com') || url.includes('googleapis.com') || url.includes('gstatic.com')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then((cached) => {
       return cached || fetch(event.request).then((response) => {
@@ -34,5 +45,4 @@ self.addEventListener('fetch', (event) => {
       });
     }).catch(() => caches.match('./index.html'))
   );
-});  );
 });
