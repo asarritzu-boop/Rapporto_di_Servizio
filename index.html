@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rapporto Servizio Multi-Profilo</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#22c55e">
+    
+    <meta property="og:title" content="Rapporto Servizio">
+    <meta property="og:description" content="Gestione ore e abbuoni multi-profilo">
+    <meta property="og:image" content="https://asarritzu-boop.github.io/Rapporto_di_Servizio/rapporti.png">
+    <meta property="og:url" content="https://asarritzu-boop.github.io/Rapporto_di_Servizio/">
+    <meta property="og:type" content="website">
+
+    <link rel="apple-touch-icon" href="https://asarritzu-boop.github.io/Rapporto_di_Servizio/rapporti.png">
+    <link rel="icon" href="https://asarritzu-boop.github.io/Rapporto_di_Servizio/rapporti.png">
+
+    <style>
+        :root { 
+            --bg: #f1f5f9; 
+            --success: #22c55e; 
+            --text-main: #1e293b;
+            --card-bg: rgba(255, 255, 255, 0.95);
+        }
+        
+        body { 
+            font-family: system-ui, sans-serif; 
+            background-color: var(--bg);
+            margin: 0; padding: 10px; 
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        .app-container { width: 100%; max-width: 500px; }
+        
+        .card { 
+            background: var(--card-bg); 
+            backdrop-filter: blur(5px);
+            padding: 15px; border-radius: 16px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
+            margin-bottom: 12px; 
+        }
+
+        .header-container {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid #e2e8f0; margin-bottom: 10px; padding-bottom: 8px;
+        }
+
+        h2 { margin: 0; color: var(--text-main); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        .scroll-container { 
+            display: flex; overflow-x: auto; gap: 12px; padding-bottom: 10px;
+            scrollbar-width: none;
+        }
+        .scroll-container::-webkit-scrollbar { display: none; }
+
+        .stat-card { 
+            min-width: 200px; flex: 0 0 auto;
+            padding: 15px; border-radius: 14px; text-align: center;
+            border: 1px solid rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+        }
+
+        .val-annuale { font-size: 1.8rem; font-weight: 900; line-height: 1; margin: 8px 0; }
+        
+        .box-mese { 
+            background: white; margin: 10px 0; padding: 10px; border-radius: 12px; 
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .mese-label { font-size: 0.7rem; font-weight: bold; color: #64748b; display: block; }
+        .mese-totale { font-size: 1.4rem; font-weight: 800; }
+        
+        .dettaglio-container { display: flex; justify-content: space-around; font-weight: 800; font-size: 0.8rem; margin-top: 5px; }
+
+        .badge-gap { padding: 3px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 800; display: inline-block; margin-top: 5px;}
+        .positivo { background: #dcfce7; color: #166534; }
+        .negativo { background: #fee2e2; color: #991b1b; }
+        
+        label { display: block; margin: 12px 0 4px; font-weight: 700; font-size: 0.8rem; color: #475569; }
+        select, input { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1rem; outline: none; transition: border-color 0.3s; box-sizing: border-box; }
+        select:focus, input:focus { border-color: var(--success); }
+
+        .grid-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 5px; }
+
+        .btn-riepilogo { padding: 6px 14px; border-radius: 8px; font-size: 0.7rem; font-weight: 800; cursor: pointer; border: none; text-transform: uppercase; background: #eee; }
+
+        .btn-save { width: 100%; background: var(--success); color: white; border: none; padding: 16px; border-radius: 12px; font-size: 1.1rem; font-weight: 900; margin-top: 15px; cursor: pointer; box-shadow: 0 4px 0 #16a34a; }
+        .btn-save:active { transform: translateY(2px); box-shadow: 0 2px 0 #16a34a; }
+        
+        .history-item { padding: 12px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; }
+        .btn-icon { background: none; border: none; cursor: pointer; font-size: 1rem; padding: 5px; }
+        
+        .btn-action { width: 100%; background: white; border: 1px solid #cbd5e1; padding: 12px; border-radius: 10px; font-size: 0.8rem; margin-top: 8px; cursor: pointer; font-weight: 600; }
+        .btn-danger { color: #dc2626; border-color: #fecaca; background: #fff1f2; }
+
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
+        .modal-content { background: white; margin: 10% auto; padding: 20px; border-radius: 20px; width: 85%; max-width: 400px; max-height: 85vh; overflow-y: auto; }
+        
+        .table-riepilogo { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
+        .table-riepilogo td, .table-riepilogo th { padding: 8px; border-bottom: 1px solid #eee; text-align: left; }
+        
+        .guida-text { font-size: 0.9rem; line-height: 1.5; color: #334155; text-align: left; }
+        .img-istruzioni { width: 100%; border-radius: 10px; margin-top: 10px; border: 1px solid #ddd; }
+        .flex-buttons { display: flex; gap: 10px; margin-top: 15px; }
+    </style>
+    <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+           signOut, onAuthStateChanged, deleteUser,
+           reauthenticateWithCredential, EmailAuthProvider, sendPasswordResetEmail }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, doc, setDoc, getDoc, deleteDoc }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyC2iMapXVb9gEq8_zHtyBdujSzX3SL-qmU",
+    authDomain: "rapportino-220aa.firebaseapp.com",
+    projectId: "rapportino-220aa",
+    storageBucket: "rapportino-220aa.firebasestorage.app",
+    messagingSenderId: "435954354523",
+    appId: "1:435954354523:web:fe148164073781e6dd327e"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  window._auth = getAuth(app);
+  window._db   = getFirestore(app);
+  window._fbFuncs = {
+    createUserWithEmailAndPassword, signInWithEmailAndPassword,
+    signOut, onAuthStateChanged, deleteUser,
+    reauthenticateWithCredential, EmailAuthProvider, sendPasswordResetEmail,
+    doc, setDoc, getDoc, deleteDoc
+  };
+
+  window._fbFuncs.onAuthStateChanged(window._auth, user => {
+    const login = document.getElementById('view-login');
+    const app   = document.getElementById('app-container-main');
+    if (user) {
+      login.style.setProperty('display','none','important');
+      app.style.setProperty('display','block','important');
+      const badge = document.getElementById('user-badge');
+      if (badge) badge.textContent = '👤 ' + user.email;
+    } else {
+      login.style.setProperty('display','flex','important');
+      app.style.setProperty('display','none','important');
+    }
+  });
+</script>
+</head>
+<body>
+<!-- SCHERMATA LOGIN -->
+<div id="view-login" style="display:none; flex-direction:column; align-items:center; justify-content:center; width:100%; min-height:100vh; background:#f1f5f9;">
+  <img src="rapporti.png" style="width:80px; border-radius:18px; margin-bottom:16px; box-shadow:0 8px 20px rgba(0,0,0,0.15);">
+  <h2 style="font-size:18px; font-weight:700; color:#1e293b; margin-bottom:20px;">Rapporto di Servizio</h2>
+
+  <div style="background:white; border-radius:16px; padding:25px; width:85%; max-width:360px; box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+    <input type="email" id="loginEmail" placeholder="Email" style="margin-bottom:10px;">
+
+    <div style="position:relative; margin-bottom:16px;">
+      <input type="password" id="loginPassword" placeholder="Password" style="width:100%; box-sizing:border-box; padding-right:42px;">
+      <button onclick="togglePassword()" id="btnTogglePwd"
+        style="position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:18px; padding:0; color:#8e8e93;">
+        👁️
+      </button>
+    </div>
+
+    <button onclick="doLogin()" style="width:100%; background:#22c55e; color:white; border:none; padding:14px; border-radius:12px; font-size:1rem; font-weight:700; margin-bottom:10px; cursor:pointer;">ACCEDI</button>
+    <button onclick="doRegister()" style="width:100%; background:#0ea5e9; color:white; border:none; padding:14px; border-radius:12px; font-size:1rem; font-weight:700; cursor:pointer;">REGISTRATI</button>
+
+    <button onclick="recuperaPassword()" style="background:none; border:none; color:#0ea5e9; font-size:13px; margin-top:12px; cursor:pointer; width:100%;">
+      Password dimenticata?
+    </button>
+
+    <div id="loginMsg" style="display:none; margin-top:12px; padding:10px 14px; border-radius:10px; font-size:13px; text-align:center;"></div>
+  </div>
+
+  <p style="font-size:11px; color:#8e8e93; margin-top:20px; text-align:center;">
+    Dati salvati in locale e sincronizzati sul Cloud
+  </p>
+</div>
+<div class="app-container" id="app-container-main" style="display:none;">
+    <div class="card" style="border-top: 6px solid var(--success);">
+        <div class="header-container">
+            <h2 style="color: var(--success);">Obiettivo Annuale 600h</h2>
+            <button id="btnRiepilogo" class="btn-riepilogo" onclick="apriRiepilogo()">Riepilogo</button>
+        </div>
+        
+        <div class="scroll-container" id="dashboardProfili"></div>
+    </div>
+
+    <div class="card">
+        <h2 id="formTitle">Nuovo Inserimento</h2>
+        <label>Persona</label>
+        <select id="utente" onchange="cambiaUtente()"></select>
+
+        <label>Mese</label>
+        <select id="mese" onchange="calcola()">
+            <option value="9">Settembre</option><option value="10">Ottobre</option>
+            <option value="11">Novembre</option><option value="12">Dicembre</option>
+            <option value="1">Gennaio</option><option value="2">Febbraio</option>
+            <option value="3">Marzo</option><option value="4">Aprile</option>
+            <option value="5">Maggio</option><option value="6">Giugno</option>
+            <option value="7">Luglio</option><option value="8">Agosto</option>
+        </select>
+
+        <div class="grid-inputs">
+            <div><label>Ore Effettive</label><input type="number" id="ore" placeholder="0" inputmode="numeric"></div>
+            <div><label>Abbuoni</label><input type="number" id="abbuoni" placeholder="0" inputmode="numeric"></div>
+        </div>
+
+        <button class="btn-save" id="btnSalva" onclick="aggiungiDati()">Salva Rapporto</button>
+        <button id="btnAnnullaModifica" class="btn-action" style="display:none;" onclick="resetForm()">Annulla Modifica</button>
+    </div>
+
+    <div class="card">
+        <h2 id="titoloGestione">Storico Dati</h2>
+        <div id="listaStorico"></div>
+    </div>
+
+    <div class="card">
+        <h2>IMPOSTAZIONI</h2>
+        <span id="user-badge" style="font-size:12px; color:#64748b; display:block; margin-bottom:8px;"></span>
+
+        <button class="btn-action" onclick="aggiungiNuovoProfilo()">➕ Aggiungi Nuovo Profilo</button>
+        <button class="btn-action" onclick="eliminaProfiloCorrente()" id="btnEliminaProfilo" style="color: #dc2626;">🗑️ Elimina Profilo Attivo</button>
+        <hr style="margin: 15px 0; opacity: 0.2;">
+
+        <button class="btn-action" onclick="apriGuida()">📖 GUIDA</button>
+        <button class="btn-action" onclick="apriPopupInstallazione()">📲 COME INSTALLARE APP</button>
+        <button class="btn-action" onclick="condividiApp()">🔗 CONDIVIDI APP</button>
+
+        <hr style="margin: 15px 0; opacity: 0.2;">
+
+        <!-- Griglia 2 colonne: Backup locale + Cloud -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <button class="btn-action" onclick="esportaDati()">💾 Esporta<br><small>Backup locale</small></button>
+          <button class="btn-action" onclick="document.getElementById('importFile').click()">📂 Importa<br><small>Backup locale</small></button>
+          <button class="btn-action" style="color:#5856d6;" onclick="syncToCloud()">☁️ Salva<br><small>su Cloud</small></button>
+          <button class="btn-action" style="color:#22c55e;" onclick="syncFromCloud()">⬇️ Ripristina<br><small>da Cloud</small></button>
+        </div>
+        <input type="file" id="importFile" style="display:none" onchange="importaDati(event)">
+
+        <hr style="margin: 15px 0; opacity: 0.2;">
+
+        <!-- Griglia 2 colonne: Reset + Logout / Elimina account -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <button class="btn-action btn-danger" onclick="resetAnno()">🔥 Reset<br><small>Totale dati</small></button>
+          <button class="btn-action" style="color:#ff9500;" onclick="doLogout()">🚪 Logout<br><small>Esci</small></button>
+          <button class="btn-action btn-danger" onclick="eliminaAccount()" style="grid-column: 1 / -1;">🗑️ Elimina Account</button>
+        </div>
+    </div>
+</div>
+
+<div id="modalApp" class="modal" onclick="chiudiModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <h2 id="modalTitle" style="font-size: 1rem; margin-bottom: 15px;"></h2>
+        <div id="modalBody"></div>
+        <button class="btn-action" onclick="chiudiModal()" style="margin-top:20px">Chiudi</button>
+    </div>
+</div>
+
+<div id="modalRiepilogo" class="modal" onclick="this.style.display='none'">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <h2 id="titoloRiepilogo">Riepilogo</h2>
+        <div id="corpoRiepilogo"></div>
+        <button class="btn-action" onclick="document.getElementById('modalRiepilogo').style.display='none'" style="margin-top:20px">Chiudi</button>
+    </div>
+</div>
+
+<script>
+    let profili = JSON.parse(localStorage.getItem('profili_v8')) || [];
+    let db = JSON.parse(localStorage.getItem('rapporto_v8')) || [];
+    let editIndex = -1;
+    const nomiMesi = {9:"Settembre", 10:"Ottobre", 11:"Novembre", 12:"Dicembre", 1:"Gennaio", 2:"Febbraio", 3:"Marzo", 4:"Aprile", 5:"Maggio", 6:"Giugno", 7:"Luglio", 8:"Agosto"};
+
+    function init() {
+        if (profili.length === 0) {
+            let nome = "";
+            while (!nome || nome.trim() === "") {
+                nome = prompt("Benvenuto! Per iniziare, inserisci il tuo nome (o il nome del primo profilo):");
+                if (nome === null) nome = ""; // Gestione tasto Annulla
+            }
+            creaProfilo(nome.trim());
+        }
+        popolaSelectUtenti();
+        document.getElementById('mese').value = new Date().getMonth() + 1;
+        cambiaUtente(); // Inizializza il colore e il calcolo basato sul primo utente
+    }
+
+    function chiudiModal() { document.getElementById('modalApp').style.display = 'none'; }
+
+    function apriGuida() {
+        document.getElementById('modalTitle').innerText = "Guida al Conteggio";
+        document.getElementById('modalBody').innerHTML = `
+            <div class="guida-text">
+                <p><b>Ore Effettive:</b> Inserisci le ore svolte nel ministero di campo.</p>
+                <p><b>Abbuoni:</b> Inserisci le ore dedicate ad attività teocratiche extra.</p>
+                <p><b>Logica:</b> Il sistema somma le ore dedicate al ministero e gli abbuoni necessari per raggiungere la quota mensile di 55 ore. Gli abbuoni in eccesso non vengono conteggiati nel totale mensile ma restano nello storico.</p>
+            </div>`;
+        document.getElementById('modalApp').style.display = 'block';
+    }
+
+    function apriPopupInstallazione() {
+        document.getElementById('modalTitle').innerText = "Scegli il tuo dispositivo";
+        document.getElementById('modalBody').innerHTML = `
+            <div class="flex-buttons">
+                <button class="btn-action" onclick="mostraIstruzioni('android')">ANDROID</button>
+                <button class="btn-action" onclick="mostraIstruzioni('iphone')">IPHONE</button>
+            </div>
+            <div id="areaIstruzioni"></div>`;
+        document.getElementById('modalApp').style.display = 'block';
+    }
+
+    function mostraIstruzioni(tipo) {
+        const img = tipo === 'android' ? 'xandroid.png' : 'xiphone.png';
+        document.getElementById('areaIstruzioni').innerHTML = `<img src="${img}" class="img-istruzioni" alt="Istruzioni ${tipo}">`;
+    }
+
+    function condividiApp() {
+        if (navigator.share) {
+            navigator.share({
+                title: 'Rapporto Servizio',
+                text: 'Gestisci il tuo rapporto di servizio con questa app!',
+                url: window.location.href
+            }).catch(console.error);
+        } else {
+            alert("Copia questo link e invialo: " + window.location.href);
+        }
+    }
+
+    function creaProfilo(nome) {
+        const colori = ['#0ea5e9', '#a855f7', '#ec4899', '#f59e0b', '#10b981', '#6366f1'];
+        const nuovo = { id: Date.now(), nome: nome, colore: colori[profili.length % colori.length] };
+        profili.push(nuovo);
+        localStorage.setItem('profili_v8', JSON.stringify(profili));
+    }
+if (window._auth && window._auth.currentUser) syncToCloud();
+    function popolaSelectUtenti() {
+        const select = document.getElementById('utente');
+        select.innerHTML = profili.map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
+    }
+
+    function cambiaUtente() {
+        const idUtente = document.getElementById('utente').value;
+        const p = profili.find(x => x.id == idUtente);
+        if(p) {
+            document.body.style.backgroundColor = p.colore + "15";
+            document.getElementById('btnRiepilogo').style.backgroundColor = p.colore;
+            document.getElementById('btnRiepilogo').style.color = "white";
+        }
+        calcola();
+    }
+
+    function calcola() {
+        const mesiServizio = [9, 10, 11, 12, 1, 2, 3, 4, 5, 6, 7, 8];
+        const meseSelezionato = document.getElementById('mese').value;
+        const meseOggi = new Date().getMonth() + 1;
+        let mesiTrascorsi = mesiServizio.indexOf(meseOggi) + 1 || 12;
+        const dashboard = document.getElementById('dashboardProfili');
+        dashboard.innerHTML = "";
+        profili.forEach(p => {
+            let totaleAnnuale = 0;
+            let effMeseSel = 0; let abbMeseSel = 0; let totMeseSel = 0;
+            mesiServizio.forEach(m => {
+                let oreEff = db.filter(v => v.utenteId == p.id && v.mese == m).reduce((s,v) => s + v.ore, 0);
+                let abbDisp = db.filter(v => v.utenteId == p.id && v.mese == m).reduce((s,v) => s + v.abbuoni, 0);
+                let abbUsati = (oreEff < 55) ? Math.min(abbDisp, 55 - oreEff) : 0;
+                let totM = oreEff + abbUsati;
+                totaleAnnuale += totM;
+                if (m == meseSelezionato) { effMeseSel = oreEff; abbMeseSel = abbUsati; totMeseSel = totM; }
+            });
+            const g600 = totaleAnnuale - 600;
+            const gMed = totaleAnnuale - (mesiTrascorsi * 50);
+            dashboard.innerHTML += `
+                <div class="stat-card" style="background: ${p.colore}20; border-color: ${p.colore}">
+                    <span style="font-weight:900; color:${p.colore}">${p.nome.toUpperCase()}</span>
+                    <div class="val-annuale">${totaleAnnuale}h</div>
+                    <div class="box-mese">
+                        <span class="mese-label">${nomiMesi[meseSelezionato].toUpperCase()}</span>
+                        <div class="mese-totale">${totMeseSel}h</div>
+                        <div class="dettaglio-container">
+                            <span style="color:${p.colore}">Eff: ${effMeseSel}</span>
+                            <span style="color:#64748b">Abb: ${abbMeseSel}</span>
+                        </div>
+                    </div>
+                    <div class="badge-gap ${g600 >= 0 ? 'positivo' : 'negativo'}">GAP 600: ${g600 > 0 ? '+' : ''}${g600}</div>
+                    <div class="badge-gap ${gMed >= 0 ? 'positivo' : 'negativo'}">Media: ${gMed > 0 ? '+' : ''}${gMed}</div>
+                </div>`;
+        });
+        aggiornaLista();
+    }
+
+    function aggiornaLista() {
+        const m = document.getElementById('mese').value;
+        const uId = document.getElementById('utente').value;
+        const lista = document.getElementById('listaStorico');
+        const dati = db.map((v, i) => ({...v, idx: i})).filter(v => v.mese == m && v.utenteId == uId);
+        lista.innerHTML = dati.length ? dati.reverse().map(v => `
+            <div class="history-item">
+                <span><b>${v.ore}h</b> <small>(+${v.abbuoni} abb.)</small><br><small>${v.timestamp}</small></span>
+                <div>
+                    <button class="btn-icon" onclick="preparaModifica(${v.idx})">✏️</button>
+                    <button class="btn-icon" onclick="eliminaSingolo(${v.idx})">🗑️</button>
+                </div>
+            </div>`).join('') : "<p style='text-align:center; color:gray; font-size:0.8rem;'>Nessun dato questo mese.</p>";
+    }
+
+    function aggiungiDati() {
+        const uId = document.getElementById('utente').value;
+        const m = document.getElementById('mese').value;
+        const o = parseFloat(document.getElementById('ore').value || 0);
+        const a = parseFloat(document.getElementById('abbuoni').value || 0);
+        const ts = new Date().toLocaleString('it-IT', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+        if (editIndex > -1) db[editIndex] = { utenteId: uId, mese: m, ore: o, abbuoni: a, timestamp: ts + " (mod.)" };
+        else db.push({ utenteId: uId, mese: m, ore: o, abbuoni: a, timestamp: ts });
+        salvaTutto(); resetForm();
+    }
+
+    function preparaModifica(i) {
+        const r = db[i]; editIndex = i;
+        document.getElementById('ore').value = r.ore;
+        document.getElementById('abbuoni').value = r.abbuoni;
+        document.getElementById('formTitle').innerText = "Modifica Record";
+        document.getElementById('btnSalva').innerText = "Aggiorna";
+        document.getElementById('btnAnnullaModifica').style.display = "block";
+    }
+
+    function salvaTutto() {
+  localStorage.setItem('rapporto_v8', JSON.stringify(db));
+  localStorage.setItem('profili_v8', JSON.stringify(profili));
+  if (window._auth && window._auth.currentUser) syncToCloud();
+  calcola();
+}
+    function resetForm() {
+        editIndex = -1; document.getElementById('ore').value = ""; document.getElementById('abbuoni').value = "";
+        document.getElementById('formTitle').innerText = "Nuovo Inserimento";
+        document.getElementById('btnSalva').innerText = "Salva Rapporto";
+        document.getElementById('btnAnnullaModifica').style.display = "none";
+    }
+
+    function eliminaSingolo(i) { if(confirm("Eliminare voce?")) { db.splice(i, 1); salvaTutto(); } }
+    function aggiungiNuovoProfilo() {
+        let nome = prompt("Inserisci il nome della persona:");
+        if (nome && nome.trim() !== "") { creaProfilo(nome.trim()); popolaSelectUtenti(); calcola(); }
+    }
+    function eliminaProfiloCorrente() {
+        const uId = document.getElementById('utente').value;
+        const profilo = profili.find(x => x.id == uId);
+        if (!profilo) return;
+        if (confirm(`Eliminare il profilo ${profilo.nome} e tutti i suoi dati?`)) {
+            db = db.filter(v => v.utenteId != uId);
+            profili = profili.filter(p => p.id != uId);
+            localStorage.setItem('profili_v8', JSON.stringify(profili));
+            salvaTutto(); if (profili.length === 0) init(); else { popolaSelectUtenti(); cambiaUtente(); }
+        }
+    }
+
+    function apriRiepilogo() {
+        const mesiServizio = [9, 10, 11, 12, 1, 2, 3, 4, 5, 6, 7, 8];
+        const uId = document.getElementById('utente').value;
+        const p = profili.find(x => x.id == uId);
+        if(!p) return;
+        document.getElementById('titoloRiepilogo').innerText = "Riepilogo: " + p.nome;
+        let html = `<table class="table-riepilogo"><tr><th>Mese</th><th>Eff.</th><th>Abb.</th><th>Tot.</th></tr>`;
+        mesiServizio.forEach(m => {
+            let oreEff = db.filter(v => v.utenteId == uId && v.mese == m).reduce((s,v) => s + v.ore, 0);
+            let abbDisp = db.filter(v => v.utenteId == uId && v.mese == m).reduce((s,v) => s + v.abbuoni, 0);
+            let abbUsati = (oreEff < 55) ? Math.min(abbDisp, 55 - oreEff) : 0;
+            if (oreEff + abbUsati > 0) html += `<tr><td>${nomiMesi[m]}</td><td>${oreEff}h</td><td>${abbUsati}h</td><td><b>${oreEff+abbUsati}h</b></td></tr>`;
+        });
+        document.getElementById('corpoRiepilogo').innerHTML = html + `</table>`;
+        document.getElementById('modalRiepilogo').style.display = 'block';
+    }
+
+    function esportaDati() {
+        const backup = { profili, db };
+        const blob = new Blob([JSON.stringify(backup)], {type: 'application/json'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'backup_servizio_family.json'; a.click();
+    }
+
+    function importaDati(e) {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            const data = JSON.parse(ev.target.result);
+            profili = data.profili || []; db = data.db || [];
+            localStorage.setItem('profili_v8', JSON.stringify(profili));
+            salvaTutto(); popolaSelectUtenti(); cambiaUtente();
+        };
+        reader.readAsText(e.target.files[0]);
+    }
+
+    function resetAnno() { if (confirm("Attenzione! Questo cancellerà TUTTI i dati. Procedere?")) { localStorage.clear(); location.reload(); } }
+
+    window.onload = init;
+    // ============================================================
+// FIREBASE: AUTH + CLOUD SYNC + ELIMINA ACCOUNT
+// ============================================================
+
+function togglePassword() {
+  const input = document.getElementById('loginPassword');
+  const btn   = document.getElementById('btnTogglePwd');
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.textContent = '🙈';
+  } else {
+    input.type = 'password';
+    btn.textContent = '👁️';
+  }
+}
+
+function showLoginMsg(testo, tipo) {
+  const el = document.getElementById('loginMsg');
+  const colori = {
+    ok:     { bg: '#d4edda', color: '#155724', border: '#c3e6cb' },
+    errore: { bg: '#f8d7da', color: '#721c24', border: '#f5c6cb' },
+    info:   { bg: '#d1ecf1', color: '#0c5460', border: '#bee5eb' }
+  };
+  const c = colori[tipo] || colori.info;
+  el.style.cssText = `display:block; background:${c.bg}; color:${c.color}; border:1px solid ${c.border}; margin-top:12px; padding:10px 14px; border-radius:10px; font-size:13px; text-align:center;`;
+  el.textContent = testo;
+}
+
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPassword').value;
+  if (!email || !pass) return showLoginMsg('Inserisci email e password', 'info');
+  try {
+    await window._fbFuncs.signInWithEmailAndPassword(window._auth, email, pass);
+  } catch(e) {
+    const msg = (e.code === 'auth/invalid-credential' || e.code === 'auth/wrong-password')
+      ? 'Email o password errati'
+      : 'Errore di accesso: ' + e.message;
+    showLoginMsg(msg, 'errore');
+  }
+}
+
+async function doRegister() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPassword').value;
+  if (!email || !pass) return showLoginMsg('Inserisci email e password', 'info');
+  if (pass.length < 6) return showLoginMsg('La password deve avere almeno 6 caratteri', 'errore');
+  try {
+    await window._fbFuncs.createUserWithEmailAndPassword(window._auth, email, pass);
+    showLoginMsg('✅ Registrazione avvenuta con successo! Benvenuto.', 'ok');
+  } catch(e) {
+    const msg = e.code === 'auth/email-already-in-use'
+      ? 'Questa email è già registrata'
+      : e.code === 'auth/invalid-email'
+      ? 'Email non valida'
+      : 'Errore: ' + e.message;
+    showLoginMsg(msg, 'errore');
+  }
+}
+
+async function recuperaPassword() {
+  const email = document.getElementById('loginEmail').value.trim();
+  if (!email) return showLoginMsg('Inserisci prima la tua email', 'info');
+  try {
+    await window._fbFuncs.sendPasswordResetEmail(window._auth, email);
+    showLoginMsg('✅ Email di recupero inviata! Controlla la tua casella.', 'ok');
+  } catch(e) {
+    const msg = e.code === 'auth/user-not-found'
+      ? 'Nessun account trovato con questa email'
+      : 'Errore: ' + e.message;
+    showLoginMsg(msg, 'errore');
+  }
+}
+
+async function doLogout() {
+  if (confirm('Vuoi uscire dall\'account?')) {
+    await window._fbFuncs.signOut(window._auth);
+  }
+}
+
+async function eliminaAccount() {
+  const user = window._auth.currentUser;
+  if (!user) return;
+  if (!confirm('⚠️ Eliminare l\'account?\nQuesta operazione è irreversibile e cancellerà anche tutti i dati Cloud.')) return;
+
+  const pass = prompt('Inserisci la tua password per confermare:');
+  if (!pass) return;
+
+  try {
+    const { reauthenticateWithCredential, EmailAuthProvider, deleteUser, doc, deleteDoc } = window._fbFuncs;
+    const credential = EmailAuthProvider.credential(user.email, pass);
+    await reauthenticateWithCredential(user, credential);
+    try {
+      await deleteDoc(doc(window._db, 'users', user.uid, 'backup', 'main'));
+    } catch(e) { /* nessun backup, ignora */ }
+    await deleteUser(user);
+    localStorage.clear();
+    alert('✅ Account eliminato con successo.');
+  } catch(e) {
+    const msg = (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential')
+      ? 'Password errata. Account non eliminato.'
+      : 'Errore: ' + e.message;
+    alert(msg);
+  }
+}
+
+async function syncToCloud() {
+  const user = window._auth.currentUser;
+  if (!user) return alert('Non sei autenticato');
+  const { doc, setDoc } = window._fbFuncs;
+  const data = {
+    profili:   localStorage.getItem('profili_v8') || '[]',
+    rapporto:  localStorage.getItem('rapporto_v8') || '[]',
+    updatedAt: new Date().toISOString()
+  };
+  try {
+    await setDoc(doc(window._db, 'users', user.uid, 'backup', 'main'), data);
+    alert('✅ Dati salvati sul Cloud!');
+  } catch(e) {
+    alert('Errore salvataggio: ' + e.message);
+  }
+}
+
+async function syncFromCloud() {
+  const user = window._auth.currentUser;
+  if (!user) return alert('Non sei autenticato');
+  const { doc, getDoc } = window._fbFuncs;
+  try {
+    const snap = await getDoc(doc(window._db, 'users', user.uid, 'backup', 'main'));
+    if (!snap.exists()) return alert('Nessun backup Cloud trovato per questo account.');
+    if (!confirm('Sovrascrivere i dati locali con quelli del Cloud?')) return;
+    const d = snap.data();
+    if (d.profili)  localStorage.setItem('profili_v8',  d.profili);
+    if (d.rapporto) localStorage.setItem('rapporto_v8', d.rapporto);
+    alert('✅ Dati ripristinati dal Cloud!');
+    location.reload();
+  } catch(e) {
+    alert('Errore ripristino: ' + e.message);
+  }
+}
+</script>
+</body>
+</html>
