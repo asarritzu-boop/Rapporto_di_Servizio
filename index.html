@@ -367,7 +367,10 @@ if (window._auth && window._auth.currentUser) syncToCloud();
         }
         calcola();
     }
-
+function selezionaProfilo(id) {
+    document.getElementById('utente').value = id;
+    cambiaUtente();
+}
     function calcola() {
         const mesiServizio = [9, 10, 11, 12, 1, 2, 3, 4, 5, 6, 7, 8];
         const meseSelezionato = document.getElementById('mese').value;
@@ -389,7 +392,7 @@ if (window._auth && window._auth.currentUser) syncToCloud();
             const g600 = totaleAnnuale - 600;
             const gMed = totaleAnnuale - (mesiTrascorsi * 50);
             dashboard.innerHTML += `
-                <div class="stat-card" style="background: ${p.colore}20; border-color: ${p.colore};">
+                <div class="stat-card" style="background: ${p.colore}20; border-color: ${p.colore}; cursor:pointer;" onclick="selezionaProfilo('${p.id}')">
                     <div style="background:${p.colore}; border-radius:8px; padding:4px 6px; margin-bottom:6px;">
                       <span style="font-weight:900; color:white; font-size:0.85rem;">${p.nome.toUpperCase()}</span>
                     </div>
