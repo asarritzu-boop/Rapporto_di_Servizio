@@ -104,6 +104,37 @@
         .guida-text { font-size: 0.9rem; line-height: 1.5; color: #334155; text-align: left; }
         .img-istruzioni { width: 100%; border-radius: 10px; margin-top: 10px; border: 1px solid #ddd; }
         .flex-buttons { display: flex; gap: 10px; margin-top: 15px; }
+            /* Stili per le sezioni a comparsa (Accordion) */
+        details summary {
+            list-style: none;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            outline: none;
+        }
+        details summary::-webkit-details-marker {
+            display: none; /* Nasconde la freccia di default su Safari/Chrome */
+        }
+        details[open] .accordion-icon {
+            transform: rotate(180deg); /* Ruota la freccia quando è aperto */
+        }
+        .accordion-icon {
+            transition: transform 0.3s ease;
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+        .accordion-content {
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid #e2e8f0;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
     </style>
     <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -231,45 +262,58 @@
         <button id="btnAnnullaModifica" class="btn-action" style="display:none;" onclick="resetForm()">Annulla Modifica</button>
     </div>
 
-    <div class="card">
-        <h2 id="titoloGestione">Storico Dati</h2>
-        <div id="listaStorico"></div>
+        <div class="card">
+        <details>
+            <summary>
+                <h2 id="titoloGestione">Storico Dati</h2>
+                <span class="accordion-icon">▼</span>
+            </summary>
+            <div class="accordion-content">
+                <div id="listaStorico"></div>
+            </div>
+        </details>
     </div>
 
-    <div class="card">
-        <h2>IMPOSTAZIONI</h2>
-        <span id="user-badge" style="font-size:12px; color:#64748b; display:block; margin-bottom:8px;"></span>
 
-        <button class="btn-action" onclick="aggiungiNuovoProfilo()">➕ Aggiungi Nuovo Profilo</button>
-<button class="btn-action" onclick="rinominaProfilo()" style="color: #0ea5e9;">✏️ Rinomina Profilo Attivo</button>
-<button class="btn-action" onclick="eliminaProfiloCorrente()" id="btnEliminaProfilo" style="color: #dc2626;">🗑️ Elimina Profilo Attivo</button>
-        <hr style="margin: 15px 0; opacity: 0.2;">
+    <    <div class="card">
+        <details>
+            <summary>
+                <h2>IMPOSTAZIONI</h2>
+                <span class="accordion-icon">▼</span>
+            </summary>
+            <div class="accordion-content">
+                <span id="user-badge" style="font-size:12px; color:#64748b; display:block; margin-bottom:8px;"></span>
 
-        <button class="btn-action" onclick="apriGuida()">📖 GUIDA</button>
-        <button class="btn-action" onclick="apriPopupInstallazione()">📲 COME INSTALLARE APP</button>
-        <button class="btn-action" onclick="condividiApp()">🔗 CONDIVIDI APP</button>
+                <button class="btn-action" onclick="aggiungiNuovoProfilo()">➕ Aggiungi Nuovo Profilo</button>
+                <button class="btn-action" onclick="rinominaProfilo()" style="color: #0ea5e9;">✏️ Rinomina Profilo Attivo</button>
+                <button class="btn-action" onclick="eliminaProfiloCorrente()" id="btnEliminaProfilo" style="color: #dc2626;">🗑️ Elimina Profilo Attivo</button>
+                <hr style="margin: 15px 0; opacity: 0.2;">
 
-        <hr style="margin: 15px 0; opacity: 0.2;">
+                <button class="btn-action" onclick="apriGuida()">📖 GUIDA</button>
+                <button class="btn-action" onclick="apriPopupInstallazione()">📲 COME INSTALLARE APP</button>
+                <button class="btn-action" onclick="condividiApp()">🔗 CONDIVIDI APP</button>
 
-        <!-- Griglia 2 colonne: Backup locale + Cloud -->
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-          <button class="btn-action" onclick="esportaDati()">💾 Esporta<br><small>Backup locale</small></button>
-          <button class="btn-action" onclick="document.getElementById('importFile').click()">📂 Importa<br><small>Backup locale</small></button>
-          <button class="btn-action" style="color:#5856d6;" onclick="syncToCloud()">☁️ Salva<br><small>su Cloud</small></button>
-          <button class="btn-action" style="color:#22c55e;" onclick="syncFromCloud()">⬇️ Ripristina<br><small>da Cloud</small></button>
-        </div>
-        <input type="file" id="importFile" style="display:none" onchange="importaDati(event)">
+                <hr style="margin: 15px 0; opacity: 0.2;">
 
-        <hr style="margin: 15px 0; opacity: 0.2;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                  <button class="btn-action" onclick="esportaDati()">💾 Esporta<br><small>Backup locale</small></button>
+                  <button class="btn-action" onclick="document.getElementById('importFile').click()">📂 Importa<br><small>Backup locale</small></button>
+                  <button class="btn-action" style="color:#5856d6;" onclick="syncToCloud()">☁️ Salva<br><small>su Cloud</small></button>
+                  <button class="btn-action" style="color:#22c55e;" onclick="syncFromCloud()">⬇️ Ripristina<br><small>da Cloud</small></button>
+                </div>
+                <input type="file" id="importFile" style="display:none" onchange="importaDati(event)">
 
-        <!-- Griglia 2 colonne: Reset + Logout / Elimina account -->
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-          <button class="btn-action btn-danger" onclick="resetAnno()">🔥 Reset<br><small>Totale dati</small></button>
-          <button class="btn-action" style="color:#ff9500;" onclick="doLogout()">🚪 Logout<br><small>Esci</small></button>
-          <button class="btn-action btn-danger" onclick="eliminaAccount()" style="grid-column: 1 / -1;">🗑️ Elimina Account</button>
-        </div>
+                <hr style="margin: 15px 0; opacity: 0.2;">
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                  <button class="btn-action btn-danger" onclick="resetAnno()">🔥 Reset<br><small>Totale dati</small></button>
+                  <button class="btn-action" style="color:#ff9500;" onclick="doLogout()">🚪 Logout<br><small>Esci</small></button>
+                  <button class="btn-action btn-danger" onclick="eliminaAccount()" style="grid-column: 1 / -1;">🗑️ Elimina Account</button>
+                </div>
+            </div>
+        </details>
     </div>
-</div>
+
 
 <div id="modalApp" class="modal" onclick="chiudiModal()">
     <div class="modal-content" onclick="event.stopPropagation()">
